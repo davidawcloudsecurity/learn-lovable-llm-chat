@@ -71,7 +71,7 @@ const ChatInput = ({
           <Send className="h-4 w-4" />
         </Button>
       </div>
-      <p className="text-[11px] text-center mt-2.5 tracking-wide" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+      <p className="text-[11px] text-center mt-2.5 tracking-wide" style={{ color: 'rgba(255, 255, 255)' }}>
         BringBackTheAssistant can make mistakes. Consider checking important info.
       </p>
     </motion.div>
