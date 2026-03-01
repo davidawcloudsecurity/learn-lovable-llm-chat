@@ -43,12 +43,12 @@ const ChatInput = ({
         </div>
       )}
       {responseTime !== null && !isLoading && (
-        <div className="max-w-3xl mx-auto mb-2 px-3 py-1 text-xs text-white/70 text-center">
+        <div className="max-w-3xl mx-auto mb-2 px-3 py-1 text-xs text-center" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
           ⚡ Response time: {responseTime}s
         </div>
       )}
       {isLoading && (
-        <div className="max-w-3xl mx-auto mb-2 px-3 py-1 text-xs text-white/70 text-center animate-pulse">
+        <div className="max-w-3xl mx-auto mb-2 px-3 py-1 text-xs text-center animate-pulse" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
           🤖 Generating response...
         </div>
       )}
@@ -71,7 +71,7 @@ const ChatInput = ({
           <Send className="h-4 w-4" />
         </Button>
       </div>
-      <p className="text-[11px] text-white/60 text-center mt-2.5 tracking-wide">
+      <p className="text-[11px] text-center mt-2.5 tracking-wide" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
         BringBackTheAssistant can make mistakes. Consider checking important info.
       </p>
     </motion.div>
