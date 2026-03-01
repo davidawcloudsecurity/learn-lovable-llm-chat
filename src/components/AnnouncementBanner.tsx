@@ -14,7 +14,7 @@ const AnnouncementBanner = () => {
       >
         <span>🎉</span>
         <span>
-          Launching LearnLLM-V3.2 — Reasoning-first models built for agents. Now available on web, app & API.{" "}
+          Launching BringBackTheAssistant-V3.2 — Reasoning-first models built for agents. Now available on web, app & API.{" "}
           <span className="text-primary font-medium group-hover:underline">Click for details →</span>
         </span>
       </a>

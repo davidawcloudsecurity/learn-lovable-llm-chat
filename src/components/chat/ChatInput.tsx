@@ -58,7 +58,7 @@ const ChatInput = ({
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message LearnLLM..."
+          placeholder="Message BringBackTheAssistant..."
           className="min-h-[48px] max-h-[200px] resize-none rounded-2xl bg-muted/60 border border-border/50 focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:border-primary/30 transition-all duration-200 text-sm"
           rows={1}
         />
@@ -72,7 +72,7 @@ const ChatInput = ({
         </Button>
       </div>
       <p className="text-[11px] text-muted-foreground text-center mt-2.5 tracking-wide">
-        LearnLLM can make mistakes. Consider checking important info.
+        BringBackTheAssistant can make mistakes. Consider checking important info.
       </p>
     </motion.div>
   );

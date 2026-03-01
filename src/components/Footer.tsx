@@ -1,12 +1,12 @@
-import { LearnLLMLogo } from "./LearnLLMLogo";
+import { BringBackTheAssistantLogo } from "./BringBackTheAssistantLogo";
 import { Mail, Github } from "lucide-react";
 
 const footerLinks = {
-  Research: ["Learn LLM"],
+  Research: ["Bring Back The Assistant"],
   Product: [
-    "LearnLLM App",
-    "LearnLLM Chat",
-    "LearnLLM Platform",
+    "BringBackTheAssistant App",
+    "BringBackTheAssistant Chat",
+    "BringBackTheAssistant Platform",
     "API Pricing",
     "Service Status",
   ],
@@ -37,7 +37,7 @@ const Footer = () => {
       <div className="container max-w-6xl mx-auto px-6 py-14">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-10">
           <div className="md:col-span-2 flex flex-col gap-6">
-            <LearnLLMLogo className="h-6" />
+            <BringBackTheAssistantLogo className="h-6" />
             <div className="flex items-center gap-4 text-muted-foreground">
               {["mail", "github", "x"].map((social) => (
                 <a
@@ -50,7 +50,7 @@ const Footer = () => {
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              © 2026 LearnLLM. All rights reserved.
+              © 2026 BringBackTheAssistant. All rights reserved.
             </p>
           </div>
 

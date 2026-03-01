@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { LearnLLMLogo } from "./LearnLLMLogo";
+import { BringBackTheAssistantLogo } from "./BringBackTheAssistantLogo";
 import { ArrowRight } from "lucide-react";
 
 const cardVariants = {
@@ -20,7 +20,7 @@ const HeroSection = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
         >
-          <LearnLLMLogo variant="large" className="text-7xl md:text-8xl lg:text-[7rem]" />
+          <BringBackTheAssistantLogo variant="large" className="text-7xl md:text-8xl lg:text-[7rem]" />
         </motion.div>
 
         <motion.p
@@ -37,12 +37,12 @@ const HeroSection = () => {
             {
               href: "/chat",
               title: "Start Now",
-              desc: "Free access to LearnLLM-V3.2.\nExperience the intelligent model.",
+              desc: "Free access to BringBackTheAssistant-V3.2.\nExperience the intelligent model.",
             },
             {
               href: "#",
               title: "Access API",
-              desc: "Build with the latest LearnLLM models.\nPowerful models, smooth experience.",
+              desc: "Build with the latest BringBackTheAssistant models.\nPowerful models, smooth experience.",
             },
           ].map((card, i) => (
             <motion.a

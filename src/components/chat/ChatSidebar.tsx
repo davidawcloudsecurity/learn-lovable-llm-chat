@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Plus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LearnLLMLogo } from "@/components/LearnLLMLogo";
+import { BringBackTheAssistantLogo } from "@/components/BringBackTheAssistantLogo";
 
 interface ChatSidebarProps {
   firstMessage?: string;
@@ -46,7 +46,7 @@ const ChatSidebar = ({ firstMessage, onNewChat }: ChatSidebarProps) => {
 
       <div className="p-4 border-t border-border/50">
         <a href="/" className="flex items-center gap-2 hover-scale">
-          <LearnLLMLogo className="h-5 w-auto" />
+          <BringBackTheAssistantLogo className="h-5 w-auto" />
         </a>
       </div>
     </aside>
