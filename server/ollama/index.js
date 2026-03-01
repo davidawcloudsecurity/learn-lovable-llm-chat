@@ -39,7 +39,7 @@ app.use(express.json());
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'LearnLLM API (Ollama)' });
+  res.json({ status: 'ok', service: 'BringBackTheAssistant API (Ollama)' });
 });
 
 // Logs endpoint - view recent logs

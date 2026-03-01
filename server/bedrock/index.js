@@ -15,7 +15,7 @@ app.use(express.json());
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'LearnLLM API' });
+  res.json({ status: 'ok', service: 'BringBackTheAssistant API' });
 });
 
 // Chat endpoint with streaming
@@ -76,6 +76,6 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`LearnLLM API server running on port ${PORT}`);
+  console.log(`BringBackTheAssistant API server running on port ${PORT}`);
   console.log(`Model: ${process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-5-sonnet-20241022-v2:0'}`);
 });

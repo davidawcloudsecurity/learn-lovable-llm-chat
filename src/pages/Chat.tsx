@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LearnLLMLogo } from "@/components/LearnLLMLogo";
+import { BringBackTheAssistantLogo } from "@/components/BringBackTheAssistantLogo";
 import { streamChatResponse } from "@/lib/chat-api";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatEmptyState from "@/components/chat/ChatEmptyState";
@@ -88,7 +88,7 @@ const Chat = () => {
       <main className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
         <header className="md:hidden flex items-center justify-between p-3 border-b border-border/50 bg-background/80 backdrop-blur-sm">
-          <LearnLLMLogo className="h-5 w-auto" />
+          <BringBackTheAssistantLogo className="h-5 w-auto" />
           <Button variant="ghost" size="icon" onClick={handleNewChat} className="rounded-xl">
             <Plus className="h-5 w-5" />
           </Button>
