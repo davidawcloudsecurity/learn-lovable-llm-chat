@@ -15,7 +15,7 @@ const ChatEmptyState = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className="text-lg text-muted-foreground font-display"
+        className="text-lg text-white/90 font-display"
       >
         How can I help you today?
       </motion.p>
