@@ -6,7 +6,12 @@ interface BringBackTheAssistantLogoProps {
 export const BringBackTheAssistantLogo = ({ className = "", variant = "small" }: BringBackTheAssistantLogoProps) => {
   if (variant === "large") {
     return (
-      <h1 className={`ds-wordmark font-bold tracking-tight select-none font-display ${className}`}>
+      <h1 className={`font-bold tracking-tight select-none font-display ${className}`} style={{
+        background: 'linear-gradient(135deg, hsl(207 87% 51%) 0%, hsl(220 100% 76%) 50%, hsl(230 100% 89%) 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text'
+      }}>
         bringbacktheassistant
       </h1>
     );
@@ -24,7 +29,7 @@ export const BringBackTheAssistantLogo = ({ className = "", variant = "small" }:
         />
         <circle cx="12" cy="18" r="0.75" fill="currentColor" />
       </svg>
-      <span className="ds-wordmark font-semibold text-lg tracking-tight font-display">bringbacktheassistant</span>
+      <span className="font-semibold text-lg tracking-tight font-display text-foreground">bringbacktheassistant</span>
     </div>
   );
 };
