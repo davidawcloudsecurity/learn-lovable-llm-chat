@@ -62,22 +62,22 @@
   .dark {
     /* Haze Color Palette - Dark Mode with Navy Background */
     --background: 210 25% 18%; /* Dark Navy #2C3E50 */
-    --foreground: 230 100% 89%; /* #C6CDFF - Soft Lavender for text */
+    --foreground: 0 0% 98%; /* White text for high contrast */
     
     --card: 210 25% 22%;
-    --card-foreground: 230 100% 89%;
+    --card-foreground: 0 0% 98%;
     
     --popover: 210 25% 22%;
-    --popover-foreground: 230 100% 89%;
+    --popover-foreground: 0 0% 98%;
     
     --primary: 207 87% 51%; /* #248BD6 - Bright Sky Blue */
     --primary-foreground: 0 0% 100%;
     
     --secondary: 210 25% 28%;
-    --secondary-foreground: 230 100% 89%;
+    --secondary-foreground: 0 0% 98%;
     
     --muted: 210 25% 25%;
-    --muted-foreground: 220 100% 76%; /* #83B8FF for muted text */
+    --muted-foreground: 0 0% 70%; /* Light gray for secondary text */
     
     --accent: 220 100% 76%; /* #83B8FF - Light Periwinkle */
     --accent-foreground: 210 25% 18%;
@@ -90,11 +90,11 @@
     --ring: 207 87% 51%;
     
     --sidebar-background: 210 25% 20%;
-    --sidebar-foreground: 230 100% 89%;
+    --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 207 87% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 25% 25%;
-    --sidebar-accent-foreground: 220 100% 76%;
+    --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 210 25% 32%;
     --sidebar-ring: 207 87% 51%;
   }
