@@ -41,7 +41,7 @@ AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
 # DEBUG mode — set DEBUG=true in Vercel env vars to enable verbose logging.
 # When False (default): only errors are logged (clean production output).
 # When True: logs every request, messages, OIDC claims, token counts, and timing.
-DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
+DEBUG = os.environ.get("DEBUG", "true").lower() == "true"
 
 # SYSTEM_PROMPT — controls how the model behaves and its personality.
 # Override by setting SYSTEM_PROMPT env var in Vercel. No code change needed.
@@ -129,7 +129,7 @@ async def chat(request: Request):
         logger.info(f"Chat request — {len(messages)} message(s), model: {MODEL_ID}")
         # Decode and log OIDC claims to verify token issuer, audience, expiry
         claims = decode_jwt_payload(oidc_token)
-        logger.info(f"OIDC claims: {json.dumps(claims, default=str)}")
+        # logger.info(f"OIDC claims: {json.dumps(claims, default=str)}")
         # Log each input message so you can see the full conversation being sent
         for msg in messages:
             logger.info(f"[{msg['role'].upper()}] {msg['content']}")
