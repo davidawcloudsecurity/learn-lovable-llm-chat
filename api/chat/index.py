@@ -5,6 +5,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from mangum import Mangum
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 # Sets up a logger so we can see what's happening in the terminal.
@@ -32,8 +33,8 @@ app.add_middleware(
 # ─── Config ─────────────────────────────────────────────────────────────────
 # Read settings from environment variables (.env file).
 # os.environ.get("KEY", "default") means: use the env var if set, otherwise use the default.
-MODEL_ID = os.environ.get("MODEL_ID", "anthropic.claude-3-5-sonnet-20241022-v2:0")
-AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
+MODEL_ID = os.environ.get("MODEL_ID")
+AWS_REGION = os.environ.get("AWS_REGION")
 
 # DEBUG mode - set DEBUG=true in your .env to enable verbose request/response logging.
 # When False, only errors are logged (clean production output).
@@ -136,3 +137,6 @@ async def chat(request: Request):
     # StreamingResponse wraps the generator and sends each yielded chunk
     # to the browser as it's produced, using the SSE content type.
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+# Vercel serverless handler
+handler = Mangum(app)
