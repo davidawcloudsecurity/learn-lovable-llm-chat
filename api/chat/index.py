@@ -24,6 +24,10 @@ MODEL_ID = os.environ.get("MODEL_ID")
 AWS_REGION = os.environ.get("AWS_REGION")
 AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
+SYSTEM_PROMPT = os.environ.get(
+    "SYSTEM_PROMPT",
+    "You are a helpful, friendly, and concise assistant. Be clear and direct in your responses.",
+)
 
 
 def decode_jwt_payload(token: str) -> dict:
@@ -76,13 +80,12 @@ async def chat(request: Request):
     if not messages:
         return {"error": "messages array is required"}
 
-
-    logger.info(f"Chat request — {len(messages)} message(s), model: {MODEL_ID}")
     if DEBUG:
+        logger.info(f"Chat request — {len(messages)} message(s), model: {MODEL_ID}")
         claims = decode_jwt_payload(oidc_token)
         logger.info(f"OIDC claims: {json.dumps(claims, default=str)}")
-    for msg in messages:
-        logger.info(f"[{msg['role'].upper()}] {msg['content']}")
+        for msg in messages:
+            logger.info(f"[{msg['role'].upper()}] {msg['content']}")
 
     bedrock_messages = [
         {"role": msg["role"], "content": [{"text": msg["content"]}]}
@@ -95,6 +98,7 @@ async def chat(request: Request):
 
         response = bedrock.converse_stream(
             modelId=MODEL_ID,
+            system=[{"text": SYSTEM_PROMPT}],
             messages=bedrock_messages,
             inferenceConfig={"maxTokens": 2048, "temperature": 0.7},
         )
