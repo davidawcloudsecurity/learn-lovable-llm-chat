@@ -1,3 +1,2 @@
 fastapi
 boto3
-mangum
