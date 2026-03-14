@@ -21,39 +21,10 @@ app.add_middleware(
 
 MODEL_ID = os.environ.get("MODEL_ID")
 AWS_REGION = os.environ.get("AWS_REGION")
-AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
-
-def get_bedrock_client():
-    """Exchange Vercel OIDC token for temporary AWS credentials via AssumeRoleWithWebIdentity."""
-    vercel_token = os.environ.get("VERCEL_OIDC_TOKEN")
-
-    if not vercel_token:
-        raise ValueError("VERCEL_OIDC_TOKEN not available")
-    if not AWS_ROLE_ARN:
-        raise ValueError("AWS_ROLE_ARN env var is not set")
-    if not AWS_REGION:
-        raise ValueError("AWS_REGION env var is not set")
-
-    sts = boto3.client("sts", region_name=AWS_REGION)
-    assumed = sts.assume_role_with_web_identity(
-        RoleArn=AWS_ROLE_ARN,
-        RoleSessionName="vercel-bedrock-session",
-        WebIdentityToken=vercel_token,
-    )
-
-    creds = assumed["Credentials"]
-    if DEBUG:
-        logger.info(f"Assumed role {AWS_ROLE_ARN}, expires {creds['Expiration']}")
-
-    return boto3.client(
-        "bedrock-runtime",
-        region_name=AWS_REGION,
-        aws_access_key_id=creds["AccessKeyId"],
-        aws_secret_access_key=creds["SecretAccessKey"],
-        aws_session_token=creds["SessionToken"],
-    )
+# boto3 automatically picks up AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from env
+bedrock = boto3.client("bedrock-runtime", region_name=AWS_REGION)
 
 
 @app.get("/api/health")
@@ -78,7 +49,6 @@ async def chat(request: Request):
     ]
 
     try:
-        bedrock = get_bedrock_client()
         start = time.time()
 
         response = bedrock.converse_stream(
@@ -101,7 +71,7 @@ async def chat(request: Request):
         return Response(content=sse_body, media_type="text/event-stream")
 
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Bedrock error: {e}")
         return Response(
             content=f"data: {json.dumps({'error': str(e)})}\n\n",
             media_type="text/event-stream",
