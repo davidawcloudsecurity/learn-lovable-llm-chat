@@ -33,6 +33,8 @@ def get_bedrock_client():
         raise ValueError("VERCEL_OIDC_TOKEN not available")
     if not AWS_ROLE_ARN:
         raise ValueError("AWS_ROLE_ARN env var is not set")
+    if not AWS_REGION:
+        raise ValueError("AWS_REGION env var is not set")
 
     sts = boto3.client("sts", region_name=AWS_REGION)
     assumed = sts.assume_role_with_web_identity(
