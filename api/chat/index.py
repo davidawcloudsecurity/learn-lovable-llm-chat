@@ -76,10 +76,13 @@ async def chat(request: Request):
     if not messages:
         return {"error": "messages array is required"}
 
+
+    logger.info(f"Chat request — {len(messages)} message(s), model: {MODEL_ID}")
     if DEBUG:
-        logger.info(f"Chat request — {len(messages)} message(s), model: {MODEL_ID}")
         claims = decode_jwt_payload(oidc_token)
         logger.info(f"OIDC claims: {json.dumps(claims, default=str)}")
+    for msg in messages:
+        logger.info(f"[{msg['role'].upper()}] {msg['content']}")
 
     bedrock_messages = [
         {"role": msg["role"], "content": [{"text": msg["content"]}]}
@@ -120,6 +123,7 @@ async def chat(request: Request):
             )
             if stop_reason == "max_tokens":
                 logger.warning("Response truncated: max_tokens reached")
+            logger.info(f"[ASSISTANT] {full_text}")
 
         sse_body = f"data: {json.dumps({'text': full_text})}\n\ndata: [DONE]\n\n"
         return Response(content=sse_body, media_type="text/event-stream")
