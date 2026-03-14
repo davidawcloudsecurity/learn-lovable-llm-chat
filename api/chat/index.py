@@ -23,7 +23,7 @@ app.add_middleware(
 MODEL_ID = os.environ.get("MODEL_ID")
 AWS_REGION = os.environ.get("AWS_REGION")
 AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
-DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
+DEBUG = os.environ.get("DEBUG", "true").lower() == "true"
 SYSTEM_PROMPT = os.environ.get(
     "SYSTEM_PROMPT",
     "You are a helpful, friendly, and concise assistant. Be clear and direct in your responses.",
