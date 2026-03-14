@@ -21,10 +21,29 @@ app.add_middleware(
 
 MODEL_ID = os.environ.get("MODEL_ID")
 AWS_REGION = os.environ.get("AWS_REGION")
+AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
-# boto3 automatically picks up AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY from env
-bedrock = boto3.client("bedrock-runtime", region_name=AWS_REGION)
+
+def get_bedrock_client(oidc_token: str):
+    """Exchange Vercel OIDC token for temporary AWS credentials.
+    Vercel injects the token as the x-vercel-oidc-token request header."""
+    sts = boto3.client("sts", region_name=AWS_REGION)
+    assumed = sts.assume_role_with_web_identity(
+        RoleArn=AWS_ROLE_ARN,
+        RoleSessionName="vercel-bedrock-session",
+        WebIdentityToken=oidc_token,
+    )
+    creds = assumed["Credentials"]
+    if DEBUG:
+        logger.info(f"Role assumed, expires {creds['Expiration']}")
+    return boto3.client(
+        "bedrock-runtime",
+        region_name=AWS_REGION,
+        aws_access_key_id=creds["AccessKeyId"],
+        aws_secret_access_key=creds["SecretAccessKey"],
+        aws_session_token=creds["SessionToken"],
+    )
 
 
 @app.get("/api/health")
@@ -34,6 +53,15 @@ def health():
 
 @app.post("/api/chat")
 async def chat(request: Request):
+    # Vercel sends the OIDC token as a request header (same as awsCredentialsProvider does in JS)
+    oidc_token = request.headers.get("x-vercel-oidc-token")
+    if not oidc_token:
+        return Response(
+            content=f"data: {json.dumps({'error': 'x-vercel-oidc-token header missing'})}\n\n",
+            media_type="text/event-stream",
+            status_code=401,
+        )
+
     body = await request.json()
     messages = body.get("messages", [])
 
@@ -49,6 +77,7 @@ async def chat(request: Request):
     ]
 
     try:
+        bedrock = get_bedrock_client(oidc_token)
         start = time.time()
 
         response = bedrock.converse_stream(
