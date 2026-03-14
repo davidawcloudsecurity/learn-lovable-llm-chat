@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import base64
 import boto3
 import logging
 from fastapi import FastAPI, Request
@@ -23,6 +24,12 @@ MODEL_ID = os.environ.get("MODEL_ID")
 AWS_REGION = os.environ.get("AWS_REGION")
 AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
+
+
+def decode_jwt_payload(token: str) -> dict:
+    payload = token.split(".")[1]
+    payload += "=" * (4 - len(payload) % 4)
+    return json.loads(base64.b64decode(payload))
 
 
 def get_bedrock_client(oidc_token: str):
@@ -70,6 +77,9 @@ async def chat(request: Request):
 
     if DEBUG:
         logger.info(f"Chat request — {len(messages)} message(s), model: {MODEL_ID}")
+
+    claims = decode_jwt_payload(oidc_token)
+    logger.info(f"OIDC claims: {json.dumps(claims, default=str)}")
 
     bedrock_messages = [
         {"role": msg["role"], "content": [{"text": msg["content"]}]}
