@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import base64
 import boto3
 import logging
 from fastapi import FastAPI, Request
@@ -25,6 +26,12 @@ AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
 DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
 
+def decode_jwt_payload(token: str) -> dict:
+    payload = token.split(".")[1]
+    payload += "=" * (4 - len(payload) % 4)
+    return json.loads(base64.b64decode(payload))
+
+
 def get_bedrock_client(oidc_token: str):
     """Exchange Vercel OIDC token for temporary AWS credentials.
     Vercel injects the token as the x-vercel-oidc-token request header."""
@@ -47,8 +54,9 @@ def get_bedrock_client(oidc_token: str):
 
 
 @app.get("/api/health")
-def health():
-    return {"status": "ok", "model": MODEL_ID}
+def health(request: Request):
+    oidc_enabled = bool(request.headers.get("x-vercel-oidc-token"))
+    return {"status": "ok", "model": MODEL_ID, "oidc": oidc_enabled}
 
 
 @app.post("/api/chat")
@@ -70,6 +78,8 @@ async def chat(request: Request):
 
     if DEBUG:
         logger.info(f"Chat request — {len(messages)} message(s), model: {MODEL_ID}")
+        claims = decode_jwt_payload(oidc_token)
+        logger.info(f"OIDC claims: {json.dumps(claims, default=str)}")
 
     bedrock_messages = [
         {"role": msg["role"], "content": [{"text": msg["content"]}]}
@@ -104,11 +114,12 @@ async def chat(request: Request):
                 output_tokens = usage.get("outputTokens")
 
         elapsed = round(time.time() - start, 2)
-        logger.info(
-            f"stopReason={stop_reason} inputTokens={input_tokens} outputTokens={output_tokens} duration={elapsed}s"
-        )
-        if stop_reason == "max_tokens":
-            logger.warning("Response truncated: max_tokens reached")
+        if DEBUG:
+            logger.info(
+                f"stopReason={stop_reason} inputTokens={input_tokens} outputTokens={output_tokens} duration={elapsed}s"
+            )
+            if stop_reason == "max_tokens":
+                logger.warning("Response truncated: max_tokens reached")
 
         sse_body = f"data: {json.dumps({'text': full_text})}\n\ndata: [DONE]\n\n"
         return Response(content=sse_body, media_type="text/event-stream")
