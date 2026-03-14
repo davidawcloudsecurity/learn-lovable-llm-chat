@@ -40,3 +40,15 @@ Added `index.py` as a Python alternative to the existing `index.js` Node.js serv
 - SSE streaming via `StreamingResponse` and a Python generator
 - Logging via `logging` module
 - `MODEL_ID` and `AWS_REGION` read from environment variables — no hardcoded values
+
+
+### 2026-03-14 — feat: debug mode logging (`DEBUG` env var)
+
+**Type:** feature
+
+Added a `DEBUG` boolean flag controlled by the `DEBUG` environment variable. When `false` (default), only errors are logged — clean output for production. When `true`, logs every request with message count, stream open, stream complete with elapsed time in seconds.
+
+Set in `.env`:
+```
+DEBUG=true
+```
