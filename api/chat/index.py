@@ -188,7 +188,11 @@ async def chat(request: Request):
     messages = body.get("messages", [])
 
     if not messages:
-        return {"error": "messages array is required"}
+        return Response(
+            content=f"data: {json.dumps({'error': 'messages array is required'})}\n\n",
+            media_type="text/event-stream",
+            status_code=400,
+        )
 
     if DEBUG:
         logger.info(f"Chat request — {len(messages)} message(s), model: {MODEL_ID}")

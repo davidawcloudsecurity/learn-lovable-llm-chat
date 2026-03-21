@@ -5,6 +5,10 @@
       "destination": "/api/chat"
     },
     {
+      "source": "/api/strands/:path*",
+      "destination": "/api/chat/strands"
+    },
+    {
       "source": "/((?!api|_next|.*\\.).*)",
       "destination": "/index.html"
     }
