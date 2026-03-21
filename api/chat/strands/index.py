@@ -10,16 +10,12 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
-# ── Strands imports ──────────────────────────────────────────────────────────
-# Agent: the main class that runs the tool loop for us
-# tool: a decorator that turns a plain Python function into a tool the LLM can call
-# BedrockModel: wraps boto3 bedrock so Strands knows how to talk to it
-from strands import Agent, tool
+from strands import Agent
 from strands.models import BedrockModel
 
-# Strands streams tokens to console via its callback handler.
-# Setting STRANDS_DISABLE_STREAMING silences the word-by-word log noise.
-os.environ["STRANDS_DISABLE_STREAMING"] = "true"
+# Import the shell tool from the tools/ subfolder
+sys.path.insert(0, str(Path(__file__).parent))
+from tools.shell_tool import shell_tool
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
@@ -36,10 +32,10 @@ app.add_middleware(
 )
 
 # ─── Config ─────────────────────────────────────────────────────────────────
-MODEL_ID    = os.environ.get("MODEL_ID")
-AWS_REGION  = os.environ.get("AWS_REGION")
+MODEL_ID     = os.environ.get("MODEL_ID")
+AWS_REGION   = os.environ.get("AWS_REGION")
 AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
-DEBUG       = os.environ.get("DEBUG", "true").lower() == "true"
+DEBUG        = os.environ.get("DEBUG", "true").lower() == "true"
 SYSTEM_PROMPT = os.environ.get(
     "SYSTEM_PROMPT",
     "You are a helpful, friendly, and concise assistant. Be clear and direct in your responses.",
@@ -52,65 +48,6 @@ for _var, _val in [("MODEL_ID", MODEL_ID), ("AWS_REGION", AWS_REGION), ("AWS_ROL
         raise ValueError(f"Required environment variable {_var} is not set")
 
 
-# ─── Shell Tool (Strands style) ──────────────────────────────────────────────
-# In our raw boto3 version we had to write get_tool_spec() manually.
-# With Strands, the @tool decorator reads the docstring and type hints
-# and builds the tool spec automatically. Much less boilerplate.
-import subprocess
-import shlex
-
-ALLOWED_COMMANDS = {
-    "uname", "hostname", "uptime", "free", "df", "lscpu",
-    "cat", "whoami", "id", "ps", "top", "lsb_release",
-    "env", "printenv", "arch", "nproc", "lsmem",
-}
-
-@tool
-def shell_tool(command: str) -> dict:
-    """Run a read-only Linux shell command on the host server and return the output.
-    Use this to answer questions about the OS, kernel, CPU, memory, disk, uptime,
-    hostname, running processes, or any other system information.
-    Only safe, read-only commands are permitted.
-    Examples: 'uname -a', 'free -h', 'df -h', 'lscpu', 'uptime -p'
-
-    Args:
-        command: The Linux shell command to run.
-
-    Returns:
-        A dict with stdout, stderr, and exit_code.
-    """
-    command = command.strip()
-    if not command:
-        return {"error": "No command provided"}
-
-    try:
-        parts = shlex.split(command)
-    except ValueError as e:
-        return {"error": f"Invalid command syntax: {e}"}
-
-    base_cmd = parts[0]
-    if base_cmd not in ALLOWED_COMMANDS:
-        return {
-            "error": f"Command '{base_cmd}' is not permitted.",
-            "allowed_commands": sorted(ALLOWED_COMMANDS),
-        }
-
-    try:
-        result = subprocess.run(parts, capture_output=True, text=True, timeout=5)
-        return {
-            "command": command,
-            "stdout": result.stdout.strip(),
-            "stderr": result.stderr.strip(),
-            "exit_code": result.returncode,
-        }
-    except FileNotFoundError:
-        return {"error": f"Command not found: {base_cmd}"}
-    except subprocess.TimeoutExpired:
-        return {"error": "Command timed out after 5 seconds"}
-    except Exception as e:
-        return {"error": str(e)}
-
-
 # ─── JWT Decode ─────────────────────────────────────────────────────────────
 def decode_jwt_payload(token: str) -> dict:
     payload = token.split(".")[1]
@@ -119,8 +56,6 @@ def decode_jwt_payload(token: str) -> dict:
 
 
 # ─── AWS Credentials via OIDC ───────────────────────────────────────────────
-# Same as the raw boto3 version — we still need to assume the IAM role
-# using the Vercel OIDC token before we can call Bedrock.
 def get_aws_credentials(oidc_token: str) -> dict:
     sts = boto3.client("sts", region_name=AWS_REGION)
     assumed = sts.assume_role_with_web_identity(
@@ -132,6 +67,19 @@ def get_aws_credentials(oidc_token: str) -> dict:
     if DEBUG:
         logger.info(f"Role assumed, expires {creds['Expiration']}")
     return creds
+
+
+# ─── History Replay ─────────────────────────────────────────────────────────
+def run_history(agent: Agent, messages: list) -> str:
+    """Replay prior conversation turns into the agent's memory.
+    Vercel is stateless — each request starts a fresh Agent, so we feed it
+    the previous messages before sending the real user message.
+    Returns the last user message content.
+    """
+    for msg in messages[:-1]:
+        if msg["role"] == "user":
+            agent(msg["content"])
+    return messages[-1]["content"]
 
 
 # ─── Health Check ───────────────────────────────────────────────────────────
@@ -168,11 +116,8 @@ async def chat(request: Request):
         creds = get_aws_credentials(oidc_token)
         start = time.time()
 
-        # ── Build a BedrockModel with the temporary OIDC credentials ────────
-        # BedrockModel doesn't accept raw AWS credential params directly.
-        # The correct way is to create a boto3 Session with the credentials
-        # and pass that session to BedrockModel via boto_session.
-        # Strands will use that session to create its own bedrock-runtime client.
+        # Build boto3 session with temporary OIDC credentials,
+        # then pass it to BedrockModel — Strands uses it internally
         boto_session = boto3.Session(
             aws_access_key_id=creds["AccessKeyId"],
             aws_secret_access_key=creds["SecretAccessKey"],
@@ -184,54 +129,28 @@ async def chat(request: Request):
             boto_session=boto_session,
         )
 
-        # ── Build the Agent ──────────────────────────────────────────────────
-        # This is the key difference from raw boto3.
-        # We don't write a while loop — Agent handles it internally.
-        # tools=[shell_tool] registers our @tool function.
-        # Strands reads the docstring to build the tool spec for the LLM.
+        # callback_handler=None silences the word-by-word token logging to stdout
         agent = Agent(
             model=bedrock_model,
             tools=[shell_tool],
             system_prompt=SYSTEM_PROMPT,
+            callback_handler=None,
         )
 
-        # ── Replay conversation history ──────────────────────────────────────
-        # Strands Agent has its own internal message list (agent.messages).
-        # Since each Vercel request is stateless, we need to feed the full
-        # conversation history in before asking the final question.
-        # We replay all messages except the last one as context, then invoke
-        # the agent with the last user message.
-        #
-        # Why not just pass all messages at once?
-        # Strands Agent is designed to be called turn by turn, not given a
-        # pre-built history. So we simulate the history by calling agent()
-        # for each prior turn, then the real call is the last message.
-        history = messages[:-1]   # everything except the last message
-        last_message = messages[-1]["content"]
-
-        # Replay prior turns silently to build up agent.messages context
-        for msg in history:
-            if msg["role"] == "user":
-                # We call the agent but discard the response — we only care
-                # about the conversation history being built up in agent.messages
-                agent(msg["content"])
-
-        # Now make the real call with the latest user message
+        last_message = run_history(agent, messages)
         response = agent(last_message)
 
         elapsed = round(time.time() - start, 2)
-
-        # ── Extract text from Strands response ───────────────────────────────
         full_text = response.message["content"][0]["text"]
 
-        # accumulated_usage is a plain dict with inputTokens/outputTokens
+        # accumulated_usage is a plain dict: {'inputTokens': N, 'outputTokens': N}
         metrics = getattr(response, "metrics", None)
         usage = getattr(metrics, "accumulated_usage", {}) if metrics else {}
         input_tokens  = usage.get("inputTokens", 0)
         output_tokens = usage.get("outputTokens", 0)
 
         if DEBUG:
-            logger.info(f"Strands response duration={elapsed}s")
+            logger.info(f"duration={elapsed}s input={input_tokens} output={output_tokens}")
             logger.info(f"[ASSISTANT] {full_text}")
 
         credits = round(
