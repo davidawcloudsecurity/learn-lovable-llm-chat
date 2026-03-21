@@ -7,6 +7,7 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from tools import os_info_tool
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 # Sets up a logger so we can see what's happening in Vercel function logs.
@@ -114,6 +115,42 @@ def get_bedrock_client(oidc_token: str):
     )
 
 
+# ─── Tool Config ────────────────────────────────────────────────────────────
+# Register tools the LLM can call. Add more tools here as you build them.
+TOOL_CONFIG = {
+    "tools": [os_info_tool.get_tool_spec()]
+}
+
+# Maps tool name → handler function
+TOOL_HANDLERS = {
+    "Shell_Tool": os_info_tool.fetch_data,
+}
+
+
+def invoke_tool(tool_use_block: dict) -> dict:
+    """Run the tool the LLM requested and return the result."""
+    name = tool_use_block["name"]
+    tool_input = tool_use_block.get("input", {})
+    tool_use_id = tool_use_block["toolUseId"]
+
+    handler = TOOL_HANDLERS.get(name)
+    if not handler:
+        result = {"error": f"Unknown tool: {name}"}
+    else:
+        try:
+            result = handler(tool_input)
+        except Exception as e:
+            result = {"error": str(e)}
+
+    if DEBUG:
+        logger.info(f"Tool {name} result: {json.dumps(result, default=str)}")
+
+    return {
+        "toolUseId": tool_use_id,
+        "content": [{"json": result}],
+    }
+
+
 # ─── Health Check ───────────────────────────────────────────────────────────
 # A simple endpoint to verify the function is running and OIDC is active.
 # Hit GET /api/health to check. oidc: true means the token header is present.
@@ -167,38 +204,56 @@ async def chat(request: Request):
         bedrock = get_bedrock_client(oidc_token)
         start = time.time()
 
-        # converse_stream() opens a streaming connection to Bedrock.
-        # system prompt sets the model's personality and behavior.
-        # inferenceConfig is built from env vars and validated at startup.
-        response = bedrock.converse_stream(
-            modelId=MODEL_ID,
-            system=[{"text": SYSTEM_PROMPT}],
-            messages=bedrock_messages,
-            inferenceConfig=INFERENCE_CONFIG,
-        )
-
-        # Collect the full response from the stream events.
-        # messageStop carries stopReason (end_turn or max_tokens).
-        # metadata carries token usage counts for monitoring.
+        # Tool-calling loop — keeps going until the model says end_turn.
+        # Each iteration: call Bedrock → if it wants a tool, run it and loop back.
+        conversation = bedrock_messages
         full_text = ""
         stop_reason = None
-        input_tokens = None
-        output_tokens = None
+        input_tokens = 0
+        output_tokens = 0
 
-        for event in response["stream"]:
-            if "contentBlockDelta" in event:
-                # contentBlockDelta is the event type that carries actual text chunks
-                text = event["contentBlockDelta"]["delta"].get("text", "")
-                if text:
-                    full_text += text
-            elif "messageStop" in event:
-                # end_turn = finished naturally, max_tokens = response was cut off
-                stop_reason = event["messageStop"].get("stopReason")
-            elif "metadata" in event:
-                # Token counts for cost monitoring and anomaly detection
-                usage = event["metadata"].get("usage", {})
-                input_tokens = usage.get("inputTokens")
-                output_tokens = usage.get("outputTokens")
+        while True:
+            response = bedrock.converse(
+                modelId=MODEL_ID,
+                system=[{"text": SYSTEM_PROMPT}],
+                messages=conversation,
+                inferenceConfig=INFERENCE_CONFIG,
+                toolConfig=TOOL_CONFIG,
+            )
+
+            # Accumulate token counts across all turns
+            usage = response.get("usage", {})
+            input_tokens += usage.get("inputTokens", 0)
+            output_tokens += usage.get("outputTokens", 0)
+
+            stop_reason = response["stopReason"]
+            assistant_message = response["output"]["message"]
+            conversation.append(assistant_message)
+
+            if stop_reason == "end_turn":
+                # Extract the final text response
+                for block in assistant_message["content"]:
+                    if "text" in block:
+                        full_text = block["text"]
+                break
+
+            elif stop_reason == "tool_use":
+                # Run each tool the model requested, collect results
+                tool_results = []
+                for block in assistant_message["content"]:
+                    if "toolUse" in block:
+                        if DEBUG:
+                            logger.info(f"Tool call: {block['toolUse']['name']} input={block['toolUse'].get('input')}")
+                        result = invoke_tool(block["toolUse"])
+                        tool_results.append({"toolResult": result})
+
+                # Feed tool results back as a user message
+                conversation.append({"role": "user", "content": tool_results})
+
+            else:
+                # Unexpected stop — bail out
+                full_text = f"Unexpected stop reason: {stop_reason}"
+                break
 
         elapsed = round(time.time() - start, 2)
         if DEBUG:
