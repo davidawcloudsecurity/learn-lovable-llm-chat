@@ -165,14 +165,19 @@ async def chat(request: Request):
         start = time.time()
 
         # ── Build a BedrockModel with the temporary OIDC credentials ────────
-        # This is the Strands way of configuring which model to use.
-        # We pass the temporary AWS credentials so it can call Bedrock.
-        bedrock_model = BedrockModel(
-            model_id=MODEL_ID,
-            region_name=AWS_REGION,
+        # BedrockModel doesn't accept raw AWS credential params directly.
+        # The correct way is to create a boto3 Session with the credentials
+        # and pass that session to BedrockModel via boto_session.
+        # Strands will use that session to create its own bedrock-runtime client.
+        boto_session = boto3.Session(
             aws_access_key_id=creds["AccessKeyId"],
             aws_secret_access_key=creds["SecretAccessKey"],
             aws_session_token=creds["SessionToken"],
+            region_name=AWS_REGION,
+        )
+        bedrock_model = BedrockModel(
+            model_id=MODEL_ID,
+            boto_session=boto_session,
         )
 
         # ── Build the Agent ──────────────────────────────────────────────────
