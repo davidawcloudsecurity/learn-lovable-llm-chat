@@ -189,14 +189,26 @@ async def chat(request: Request):
                 f"outputTokens={output_tokens} duration={elapsed}s"
             )
             if stop_reason == "max_tokens":
-                # User received a truncated response — consider raising maxTokens
                 logger.warning("Response truncated: max_tokens reached")
-            # Log the full assistant response to see what was sent back
             logger.info(f"[ASSISTANT] {full_text}")
 
+        # Haiku 4.5 pricing: $1/MTok input, $5/MTok output
+        credits = round(
+            ((input_tokens or 0) / 1_000_000 * 1.0) +
+            ((output_tokens or 0) / 1_000_000 * 5.0),
+            6
+        )
+
         # SSE (Server-Sent Events) format: "data: <json>\n\n"
-        # The frontend reads this and renders the response text.
-        sse_body = f"data: {json.dumps({'text': full_text})}\n\ndata: [DONE]\n\n"
+        # The frontend reads this and renders the response text + metadata.
+        payload = {
+            "text": full_text,
+            "elapsed": elapsed,
+            "credits": credits,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+        }
+        sse_body = f"data: {json.dumps(payload)}\n\ndata: [DONE]\n\n"
         return Response(content=sse_body, media_type="text/event-stream")
 
     except Exception as e:

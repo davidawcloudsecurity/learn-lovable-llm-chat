@@ -3,12 +3,13 @@ import { Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import type { ResponseMeta } from "@/lib/chat-api";
 
 interface ChatInputProps {
   input: string;
   isLoading: boolean;
   error: string | null;
-  responseTime: number | null;
+  meta: ResponseMeta | null;
   onInputChange: (value: string) => void;
   onSend: () => void;
 }
@@ -17,7 +18,7 @@ const ChatInput = ({
   input,
   isLoading,
   error,
-  responseTime,
+  meta,
   onInputChange,
   onSend,
 }: ChatInputProps) => {
@@ -42,9 +43,9 @@ const ChatInput = ({
           Error: {error}
         </div>
       )}
-      {responseTime !== null && !isLoading && (
+      {meta !== null && !isLoading && (
         <div className="max-w-3xl mx-auto mb-2 px-3 py-1 text-xs text-muted-foreground text-center">
-          ⚡ Response time: {responseTime}s
+          Credits used: ${meta.credits.toFixed(6)} · {meta.inputTokens + meta.outputTokens} tokens ({meta.inputTokens} in / {meta.outputTokens} out) · {meta.elapsed}s
         </div>
       )}
       {isLoading && (

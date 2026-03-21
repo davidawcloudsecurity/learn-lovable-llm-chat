@@ -1,10 +1,13 @@
 type Message = { role: "user" | "assistant"; content: string };
 
+export type ResponseMeta = { elapsed: number; credits: number; inputTokens: number; outputTokens: number };
+
 export async function streamChatResponse(
   messages: Message[],
   onDelta: (text: string) => void,
   onDone: () => void,
-  onError: (error: string) => void
+  onError: (error: string) => void,
+  onMeta?: (meta: ResponseMeta) => void
 ) {
   try {
     const response = await fetch('/api/chat', {
@@ -28,7 +31,7 @@ export async function streamChatResponse(
 
     while (true) {
       const { done, value } = await reader.read();
-      
+
       if (done) break;
 
       const chunk = decoder.decode(value);
@@ -37,7 +40,7 @@ export async function streamChatResponse(
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
-          
+
           if (data === '[DONE]') {
             onDone();
             return;
@@ -47,6 +50,14 @@ export async function streamChatResponse(
             const parsed = JSON.parse(data);
             if (parsed.text) {
               onDelta(parsed.text);
+              if (parsed.elapsed != null && parsed.credits != null) {
+                onMeta?.({
+                  elapsed: parsed.elapsed,
+                  credits: parsed.credits,
+                  inputTokens: parsed.input_tokens ?? 0,
+                  outputTokens: parsed.output_tokens ?? 0,
+                });
+              }
             } else if (parsed.error) {
               onError(parsed.error);
               return;
