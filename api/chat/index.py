@@ -1,12 +1,19 @@
 import os
+import sys
 import json
 import time
 import base64
 import boto3
 import logging
+from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+
+# Add this file's directory to sys.path so 'tools' package can be found
+# regardless of what working directory Vercel sets at runtime.
+sys.path.insert(0, str(Path(__file__).parent))
+
 from tools import os_info_tool
 
 # ─── Logging ────────────────────────────────────────────────────────────────
