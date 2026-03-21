@@ -55,6 +55,22 @@ SYSTEM_PROMPT = os.environ.get(
 INPUT_RATE_PER_MTOK = float(os.environ.get("INPUT_RATE_PER_MTOK", "1.0"))
 OUTPUT_RATE_PER_MTOK = float(os.environ.get("OUTPUT_RATE_PER_MTOK", "5.0"))
 
+# ─── Inference Config ────────────────────────────────────────────────────────
+# Controls how the model generates responses. All values are configurable via
+# Vercel env vars — no code change needed to tune behaviour per deployment.
+# Only these 4 keys are valid for Bedrock's Converse API.
+VALID_INFERENCE_PARAMS = {"maxTokens", "temperature", "topP", "stopSequences"}
+
+INFERENCE_CONFIG = {
+    "maxTokens": int(os.environ.get("MAX_TOKENS", "2048")),    # max output length
+    "temperature": float(os.environ.get("TEMPERATURE", "0.7")), # 0=deterministic, 1=creative
+}
+
+# Validate at startup — catches typos or invalid keys before any request is served.
+invalid_keys = [k for k in INFERENCE_CONFIG if k not in VALID_INFERENCE_PARAMS]
+if invalid_keys:
+    raise ValueError(f"Invalid inferenceConfig keys: {invalid_keys}. Valid keys: {VALID_INFERENCE_PARAMS}")
+
 # Fail fast at startup if required env vars are missing.
 # Better to crash with a clear message than fail silently mid-request.
 for _var, _val in [("MODEL_ID", MODEL_ID), ("AWS_REGION", AWS_REGION), ("AWS_ROLE_ARN", AWS_ROLE_ARN)]:
@@ -153,15 +169,12 @@ async def chat(request: Request):
 
         # converse_stream() opens a streaming connection to Bedrock.
         # system prompt sets the model's personality and behavior.
-        # inferenceConfig controls response length and creativity.
+        # inferenceConfig is built from env vars and validated at startup.
         response = bedrock.converse_stream(
             modelId=MODEL_ID,
             system=[{"text": SYSTEM_PROMPT}],
             messages=bedrock_messages,
-            inferenceConfig={
-                "maxTokens": 2048,   # max output length — model stops here if hit
-                "temperature": 0.7,  # 0 = deterministic, 1 = creative
-            },
+            inferenceConfig=INFERENCE_CONFIG,
         )
 
         # Collect the full response from the stream events.
