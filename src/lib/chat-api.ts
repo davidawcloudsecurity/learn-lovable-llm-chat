@@ -48,16 +48,16 @@ export async function streamChatResponse(
 
           try {
             const parsed = JSON.parse(data);
-            if (parsed.text) {
+            if (typeof parsed.text === "string") {
               onDelta(parsed.text);
-              if (parsed.elapsed != null && parsed.credits != null) {
-                onMeta?.({
-                  elapsed: parsed.elapsed,
-                  credits: parsed.credits,
-                  inputTokens: parsed.input_tokens ?? 0,
-                  outputTokens: parsed.output_tokens ?? 0,
-                });
-              }
+            }
+            if (parsed.elapsed != null && parsed.credits != null) {
+              onMeta?.({
+                elapsed: parsed.elapsed,
+                credits: parsed.credits,
+                inputTokens: parsed.input_tokens ?? 0,
+                outputTokens: parsed.output_tokens ?? 0,
+              });
             } else if (parsed.error) {
               onError(parsed.error);
               return;
