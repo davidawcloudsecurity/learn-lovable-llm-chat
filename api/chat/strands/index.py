@@ -17,9 +17,9 @@ from fastapi.responses import Response
 from strands import Agent, tool
 from strands.models import BedrockModel
 
-# Suppress Strands' default token-by-token console streaming output.
-# Without this, every token gets printed to stdout as a separate log line.
-os.environ.setdefault("STRANDS_TOOL_CONSOLE_MODE", "disabled")
+# Strands streams tokens to console via its callback handler.
+# Setting STRANDS_DISABLE_STREAMING silences the word-by-word log noise.
+os.environ["STRANDS_DISABLE_STREAMING"] = "true"
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
@@ -224,14 +224,20 @@ async def chat(request: Request):
         # ── Extract text from Strands response ───────────────────────────────
         full_text = response.message["content"][0]["text"]
 
-        # response.metrics is an EventLoopMetrics object, not a dict.
-        # Access token counts as attributes, not with .get()
-        metrics = getattr(response, "metrics", None)
-        # Log the full metrics object so we can see exactly what's available
+        # Log everything on the response so we can find token counts
         if DEBUG:
-            logger.info(f"Strands metrics type: {type(metrics)}")
-            logger.info(f"Strands metrics dir: {[a for a in dir(metrics) if not a.startswith('_')]}")
-            logger.info(f"Strands metrics vars: {vars(metrics) if metrics else 'None'}")
+            logger.info(f"response type: {type(response)}")
+            logger.info(f"response attrs: {[a for a in dir(response) if not a.startswith('_')]}")
+            metrics = getattr(response, "metrics", None)
+            logger.info(f"metrics type: {type(metrics)}")
+            logger.info(f"metrics attrs: {[a for a in dir(metrics) if not a.startswith('_')] if metrics else 'None'}")
+            if metrics:
+                try:
+                    logger.info(f"metrics vars: {vars(metrics)}")
+                except Exception as e:
+                    logger.info(f"metrics vars error: {e}")
+
+        metrics = getattr(response, "metrics", None)
         input_tokens  = getattr(metrics, "input_tokens", 0) if metrics else 0
         output_tokens = getattr(metrics, "output_tokens", 0) if metrics else 0
 
