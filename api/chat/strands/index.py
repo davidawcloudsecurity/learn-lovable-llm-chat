@@ -17,6 +17,10 @@ from fastapi.responses import Response
 from strands import Agent, tool
 from strands.models import BedrockModel
 
+# Suppress Strands' default token-by-token console streaming output.
+# Without this, every token gets printed to stdout as a separate log line.
+os.environ.setdefault("STRANDS_TOOL_CONSOLE_MODE", "disabled")
+
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -217,14 +221,14 @@ async def chat(request: Request):
 
         elapsed = round(time.time() - start, 2)
 
-        # ── Extract text and token usage from Strands response ───────────────
-        # response.message is the raw Bedrock message dict
-        # response.metrics has token counts if available
+        # ── Extract text from Strands response ───────────────────────────────
         full_text = response.message["content"][0]["text"]
 
-        # Strands exposes usage via response.metrics or the message itself
-        input_tokens  = getattr(response, "metrics", {}).get("inputTokens", 0) if hasattr(response, "metrics") else 0
-        output_tokens = getattr(response, "metrics", {}).get("outputTokens", 0) if hasattr(response, "metrics") else 0
+        # response.metrics is an EventLoopMetrics object, not a dict.
+        # Access token counts as attributes, not with .get()
+        metrics = getattr(response, "metrics", None)
+        input_tokens  = getattr(metrics, "input_tokens", 0) if metrics else 0
+        output_tokens = getattr(metrics, "output_tokens", 0) if metrics else 0
 
         if DEBUG:
             logger.info(f"Strands response duration={elapsed}s")
