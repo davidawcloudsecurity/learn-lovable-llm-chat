@@ -50,6 +50,11 @@ SYSTEM_PROMPT = os.environ.get(
     "You are a helpful, friendly, and concise assistant. Be clear and direct in your responses.",
 )
 
+# Token pricing rates (USD per million tokens).
+# Defaults match Claude Haiku 4.5. Override via Vercel env vars if you switch models.
+INPUT_RATE_PER_MTOK = float(os.environ.get("INPUT_RATE_PER_MTOK", "1.0"))
+OUTPUT_RATE_PER_MTOK = float(os.environ.get("OUTPUT_RATE_PER_MTOK", "5.0"))
+
 # Fail fast at startup if required env vars are missing.
 # Better to crash with a clear message than fail silently mid-request.
 for _var, _val in [("MODEL_ID", MODEL_ID), ("AWS_REGION", AWS_REGION), ("AWS_ROLE_ARN", AWS_ROLE_ARN)]:
@@ -194,8 +199,8 @@ async def chat(request: Request):
 
         # Haiku 4.5 pricing: $1/MTok input, $5/MTok output
         credits = round(
-            ((input_tokens or 0) / 1_000_000 * 1.0) +
-            ((output_tokens or 0) / 1_000_000 * 5.0),
+            ((input_tokens or 0) / 1_000_000 * INPUT_RATE_PER_MTOK) +
+            ((output_tokens or 0) / 1_000_000 * OUTPUT_RATE_PER_MTOK),
             6
         )
 
