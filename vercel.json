@@ -5,7 +5,7 @@
       "destination": "/api/chat"
     },
     {
-      "source": "/api/strands",
+      "source": "/api/strands/:path*",
       "destination": "/api/chat/strands"
     },
     {
