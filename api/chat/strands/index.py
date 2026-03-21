@@ -224,22 +224,11 @@ async def chat(request: Request):
         # ── Extract text from Strands response ───────────────────────────────
         full_text = response.message["content"][0]["text"]
 
-        # Log everything on the response so we can find token counts
-        if DEBUG:
-            logger.info(f"response type: {type(response)}")
-            logger.info(f"response attrs: {[a for a in dir(response) if not a.startswith('_')]}")
-            metrics = getattr(response, "metrics", None)
-            logger.info(f"metrics type: {type(metrics)}")
-            logger.info(f"metrics attrs: {[a for a in dir(metrics) if not a.startswith('_')] if metrics else 'None'}")
-            if metrics:
-                try:
-                    logger.info(f"metrics vars: {vars(metrics)}")
-                except Exception as e:
-                    logger.info(f"metrics vars error: {e}")
-
+        # accumulated_usage is a plain dict with inputTokens/outputTokens
         metrics = getattr(response, "metrics", None)
-        input_tokens  = getattr(metrics, "input_tokens", 0) if metrics else 0
-        output_tokens = getattr(metrics, "output_tokens", 0) if metrics else 0
+        usage = getattr(metrics, "accumulated_usage", {}) if metrics else {}
+        input_tokens  = usage.get("inputTokens", 0)
+        output_tokens = usage.get("outputTokens", 0)
 
         if DEBUG:
             logger.info(f"Strands response duration={elapsed}s")
