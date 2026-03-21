@@ -227,6 +227,11 @@ async def chat(request: Request):
         # response.metrics is an EventLoopMetrics object, not a dict.
         # Access token counts as attributes, not with .get()
         metrics = getattr(response, "metrics", None)
+        # Log the full metrics object so we can see exactly what's available
+        if DEBUG:
+            logger.info(f"Strands metrics type: {type(metrics)}")
+            logger.info(f"Strands metrics dir: {[a for a in dir(metrics) if not a.startswith('_')]}")
+            logger.info(f"Strands metrics vars: {vars(metrics) if metrics else 'None'}")
         input_tokens  = getattr(metrics, "input_tokens", 0) if metrics else 0
         output_tokens = getattr(metrics, "output_tokens", 0) if metrics else 0
 
