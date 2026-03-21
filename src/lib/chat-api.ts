@@ -10,7 +10,7 @@ export async function streamChatResponse(
   onMeta?: (meta: ResponseMeta) => void
 ) {
   try {
-    const response = await fetch('/api/chat', {
+    const response = await fetch('/api/strands', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
