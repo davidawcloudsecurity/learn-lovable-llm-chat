@@ -1,10 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/chat",
-      "destination": "/api/chat"
-    },
-    {
       "source": "/api/strands/:path*",
       "destination": "/api/chat/strands"
     },
