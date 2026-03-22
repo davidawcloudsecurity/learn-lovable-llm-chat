@@ -6,7 +6,7 @@ from strands import tool
 # Add commands here to expand what the AI can do.
 ALLOWED_COMMANDS = {
     "uname", "uptime", "free", "df", "lscpu",
-    "cat", "whoami", "id", "ps", "top", "lsb_release",
+    "cat", "id", "ps", "top", "lsb_release",
     "env", "printenv", "arch", "nproc", "lsmem",
     "head", "tail", "wc",
 }
