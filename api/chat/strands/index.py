@@ -83,7 +83,9 @@ def run_history(agent: Agent, messages: list) -> str:
     the previous messages before sending the real user message.
     Returns the last user message content.
     """
-    for msg in messages[:-1]:
+    # Only replay last 6 messages (3 turns) to avoid context window overflow
+    recent = messages[:-1][-6:]
+    for msg in recent:
         if msg["role"] == "user":
             agent(msg["content"])
     return messages[-1]["content"]
