@@ -5,9 +5,7 @@ import shlex
 # Commands the LLM is allowed to run — read-only, safe Linux commands only.
 # This is a security allowlist. The LLM cannot run anything not on this list.
 ALLOWED_COMMANDS = {
-    "uname", "hostname", "uptime", "free", "df", "lscpu",
-    "cat", "whoami", "id", "ps", "top", "lsb_release",
-    "env", "printenv", "arch", "nproc", "lsmem", "pwd", "ls", "find",
+    "pwd", "ls", "find",
 }
 
 
