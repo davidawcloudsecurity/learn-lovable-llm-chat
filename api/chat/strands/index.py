@@ -140,12 +140,10 @@ async def chat(request: Request):
 
         # Log tool calls so we can verify the LLM actually ran them (not bluffing)
         def callback_handler(**kwargs):
-            if "tool_use" in kwargs:
-                tool = kwargs["tool_use"]
-                logger.info(f"[TOOL CALL] {tool.get('name')} input={json.dumps(tool.get('input', {}), default=str)[:200]}")
-            if "tool_result" in kwargs:
-                result = kwargs["tool_result"]
-                logger.info(f"[TOOL RESULT] {json.dumps(result, default=str)[:300]}")
+            # Log all keys so we can learn what Strands actually sends
+            for key, val in kwargs.items():
+                if key not in ("data", "delta"):  # skip token-by-token streaming noise
+                    logger.info(f"[CB] {key}={json.dumps(val, default=str)[:300]}")
 
         agent = Agent(
             model=bedrock_model,
