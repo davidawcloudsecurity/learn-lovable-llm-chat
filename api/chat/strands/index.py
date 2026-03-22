@@ -153,17 +153,11 @@ def make_callback_handler(trace: list) -> callable:
 
 # ─── History Replay ─────────────────────────────────────────────────────────
 def run_history(agent: Agent, messages: list) -> str:
-    """
-    Inject prior conversation turns directly into agent memory WITHOUT
-    re-invoking the agent. This avoids the LLM re-answering old questions
-    and potentially building false beliefs about what tools exist.
-    """
+    """Replay prior conversation turns into the agent's memory."""
     recent = messages[:-1][-6:]  # last 3 turns only, avoid context overflow
     for msg in recent:
-        agent.messages.append({
-            "role": msg["role"],
-            "content": [{"type": "text", "text": msg["content"]}],
-        })
+        if msg["role"] == "user":
+            agent(msg["content"])
     return messages[-1]["content"]
 
 
@@ -229,10 +223,10 @@ async def chat(request: Request):
 
         elapsed = round(time.time() - start, 2)
 
-        # Extract final text response
+        # Extract final text response — Bedrock blocks use {"text": "..."} not {"type":"text"}
         content_blocks = response.message.get("content", [])
-        text_blocks = [b["text"] for b in content_blocks if b.get("type") == "text"]
-        full_text = "\n".join(text_blocks).strip()
+        text_blocks = [b["text"] for b in content_blocks if "text" in b]
+        full_text = "\n".join(text_blocks).strip() or response.message["content"][0].get("text", "")
 
         # Token usage
         metrics = getattr(response, "metrics", None)
