@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BringBackTheAssistantLogo } from "@/components/BringBackTheAssistantLogo";
-import { streamChatResponse } from "@/lib/chat-api";
+import { streamChatResponse, ResponseMeta } from "@/lib/chat-api";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatEmptyState from "@/components/chat/ChatEmptyState";
 import ChatMessage from "@/components/chat/ChatMessage";
@@ -15,7 +15,7 @@ const Chat = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [responseTime, setResponseTime] = useState<number | null>(null);
+  const [meta, setMeta] = useState<ResponseMeta | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,14 +34,11 @@ const Chat = () => {
     setInput("");
     setIsLoading(true);
     setError(null);
-    setResponseTime(null);
+    setMeta(null);
 
-    const startTime = performance.now();
-    let firstTokenTime: number | null = null;
     let assistantSoFar = "";
 
     const upsert = (chunk: string) => {
-      if (firstTokenTime === null) firstTokenTime = performance.now();
       assistantSoFar += chunk;
       setMessages((prev) => {
         const last = prev[prev.length - 1];
@@ -55,9 +52,6 @@ const Chat = () => {
     };
 
     const onDone = () => {
-      const endTime = performance.now();
-      const totalTime = ((endTime - startTime) / 1000).toFixed(2);
-      setResponseTime(parseFloat(totalTime));
       setIsLoading(false);
     };
 
@@ -66,14 +60,14 @@ const Chat = () => {
       setIsLoading(false);
     };
 
-    await streamChatResponse(updatedMessages, upsert, onDone, onError);
+    await streamChatResponse(updatedMessages, upsert, onDone, onError, setMeta);
   };
 
   const handleNewChat = () => {
     setMessages([]);
     setInput("");
     setError(null);
-    setResponseTime(null);
+    setMeta(null);
   };
 
   const isEmpty = messages.length === 0;
@@ -125,7 +119,7 @@ const Chat = () => {
           input={input}
           isLoading={isLoading}
           error={error}
-          responseTime={responseTime}
+          meta={meta}
           onInputChange={setInput}
           onSend={handleSend}
         />
