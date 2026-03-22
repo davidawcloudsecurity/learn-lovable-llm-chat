@@ -4,8 +4,11 @@ from strands import tool
 
 @tool
 def file_read(path: str) -> dict:
-    """Read the contents of a file on the server.
-    Use this to view file contents, config files, or logs.
+    """Read the full contents of any file on the server by its path.
+    Use this whenever the user asks to read, view, show, or open a file.
+    This works for any file: logs, configs, text files, etc.
+    Do NOT use shell_tool with cat — use this instead.
+    Examples: '/etc/os-release', '/var/log/syslog', '/etc/hostname'
 
     Args:
         path: Absolute or relative path to the file.

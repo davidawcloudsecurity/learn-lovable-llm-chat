@@ -14,10 +14,9 @@ ALLOWED_COMMANDS = {
 
 @tool
 def shell_tool(command: str) -> dict:
-    """Run a read-only Linux shell command on the host server and return the output.
-    Use this to answer questions about the OS, kernel, CPU, memory, disk, uptime,
-    hostname, running processes, or any other system information.
-    Only safe, read-only commands are permitted.
+    """Run a read-only Linux shell command to get system information.
+    Use this ONLY for system stats: OS info, CPU, memory, disk, uptime, hostname, processes.
+    Do NOT use this to read file contents — use file_read instead.
     Examples: 'uname -a', 'free -h', 'df -h', 'lscpu', 'uptime -p'
 
     Args:
