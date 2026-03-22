@@ -11,7 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from strands import Agent
-from strands_tools import file_read
+from strands_tools import file_read, file_write, http_request
+from strands_tools import shell
 
 from strands.models import BedrockModel
 
@@ -141,7 +142,7 @@ async def chat(request: Request):
         # callback_handler=None silences the word-by-word token logging to stdout
         agent = Agent(
             model=bedrock_model,
-            tools=[file_read], # where the tools get called
+            tools=[file_read, file_write,http_request,shell], # where the tools get called
             system_prompt=SYSTEM_PROMPT,
             callback_handler=None,
         )
