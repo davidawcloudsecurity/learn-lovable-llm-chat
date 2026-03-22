@@ -39,7 +39,16 @@ AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
 DEBUG        = os.environ.get("DEBUG", "true").lower() == "true"
 SYSTEM_PROMPT = os.environ.get(
     "SYSTEM_PROMPT",
-    "You are a helpful, friendly, and concise assistant. Be clear and direct in your responses.",
+    (
+        "You are a helpful, friendly, and concise assistant running on a Linux server. "
+        "You have the following tools available:\n"
+        "- shell_tool: run safe read-only Linux commands (uname, df, free, ps, etc.)\n"
+        "- file_read: read the full contents of any file by path\n"
+        "- file_list: list files and folders in a directory\n"
+        "- file_search: search for a text pattern inside a file\n"
+        "Always use the appropriate tool when the user asks about files or the system. "
+        "Do not say you cannot access files — use file_read or file_list instead."
+    ),
 )
 INPUT_RATE_PER_MTOK  = float(os.environ.get("INPUT_RATE_PER_MTOK", "1.0"))
 OUTPUT_RATE_PER_MTOK = float(os.environ.get("OUTPUT_RATE_PER_MTOK", "5.0"))
