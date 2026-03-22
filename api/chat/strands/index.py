@@ -12,7 +12,6 @@ from fastapi.responses import Response
 
 from strands import Agent
 from strands_tools import file_read, file_write, http_request
-from strands_tools import shell
 
 from strands.models import BedrockModel
 
@@ -139,12 +138,20 @@ async def chat(request: Request):
             boto_session=boto_session,
         )
 
-        # callback_handler=None silences the word-by-word token logging to stdout
+        # Log tool calls so we can verify the LLM actually ran them (not bluffing)
+        def callback_handler(**kwargs):
+            if "tool_use" in kwargs:
+                tool = kwargs["tool_use"]
+                logger.info(f"[TOOL CALL] {tool.get('name')} input={json.dumps(tool.get('input', {}), default=str)[:200]}")
+            if "tool_result" in kwargs:
+                result = kwargs["tool_result"]
+                logger.info(f"[TOOL RESULT] {json.dumps(result, default=str)[:300]}")
+
         agent = Agent(
             model=bedrock_model,
-            tools=[file_read, file_write,http_request,shell], # where the tools get called
+            tools=[file_read, file_write, http_request], # shell removed — crashes on Vercel (needs pty)
             system_prompt=SYSTEM_PROMPT,
-            callback_handler=None,
+            callback_handler=callback_handler,
         )
 
         last_message = run_history(agent, messages)
