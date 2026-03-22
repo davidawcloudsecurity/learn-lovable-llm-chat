@@ -11,12 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from strands import Agent
+from strands_tools import file_read
+
 from strands.models import BedrockModel
 
-# Import tools from the tools/ subfolder
+# shell_tool is our custom tool in tools/shell_tool.py
 sys.path.insert(0, str(Path(__file__).parent))
-from tools.shell_tool import shell_tool # call one function from one file
-from tools.file_tools import file_read, file_list, file_search # call three functions from one file
+
+# file_read comes from the strands-agents-tools pip package
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
@@ -42,12 +44,7 @@ SYSTEM_PROMPT = os.environ.get(
     (
         "You are a helpful, friendly, and concise assistant running on a Linux server. "
         "You have the following tools available:\n"
-        "- shell_tool: run safe read-only Linux commands (uname, df, free, ps, etc.)\n"
-        "- file_read: read the full contents of any file by path\n"
-        "- file_list: list files and folders in a directory\n"
-        "- file_search: search for a text pattern inside a file\n"
-        "Always use the appropriate tool when the user asks about files or the system. "
-        "Do not say you cannot access files — use file_read or file_list instead."
+        "- file_read: read files, list directories, search file contents, and compare files\n"
     ),
 )
 INPUT_RATE_PER_MTOK  = float(os.environ.get("INPUT_RATE_PER_MTOK", "1.0"))
@@ -142,7 +139,7 @@ async def chat(request: Request):
         # callback_handler=None silences the word-by-word token logging to stdout
         agent = Agent(
             model=bedrock_model,
-            tools=[shell_tool, file_read, file_list, file_search], # where the tools get called
+            tools=[file_read], # where the tools get called
             system_prompt=SYSTEM_PROMPT,
             callback_handler=None,
         )
