@@ -8,7 +8,7 @@ ALLOWED_COMMANDS = {
     "uname", "hostname", "uptime", "free", "df", "lscpu",
     "cat", "whoami", "id", "ps", "top", "lsb_release",
     "env", "printenv", "arch", "nproc", "lsmem",
-    "grep", "find", "ls", "head", "tail", "wc",
+    "grep", "find", "ls", "head", "tail", "wc", "ls",
 }
 
 
