@@ -5,7 +5,7 @@ from strands import tool
 # Commands the LLM is allowed to run — read-only, safe Linux commands only.
 # Add commands here to expand what the AI can do.
 ALLOWED_COMMANDS = {
-    "uname", "hostname", "uptime", "free", "df", "lscpu",
+    "uname", "uptime", "free", "df", "lscpu",
     "cat", "whoami", "id", "ps", "top", "lsb_release",
     "env", "printenv", "arch", "nproc", "lsmem",
     "head", "tail", "wc",
