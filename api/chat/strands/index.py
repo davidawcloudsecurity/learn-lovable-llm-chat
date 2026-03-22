@@ -13,9 +13,10 @@ from fastapi.responses import Response
 from strands import Agent
 from strands.models import BedrockModel
 
-# Import the shell tool from the tools/ subfolder
+# Import tools from the tools/ subfolder
 sys.path.insert(0, str(Path(__file__).parent))
-from tools.shell_tool import shell_tool
+from tools.shell_tool import shell_tool # call one function from one file
+from tools.file_tools import file_read, file_list, file_search # call three functions from one file
 
 # ─── Logging ────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
@@ -132,7 +133,7 @@ async def chat(request: Request):
         # callback_handler=None silences the word-by-word token logging to stdout
         agent = Agent(
             model=bedrock_model,
-            tools=[shell_tool],
+            tools=[shell_tool, file_read, file_list, file_search], # where the tools get called
             system_prompt=SYSTEM_PROMPT,
             callback_handler=None,
         )
