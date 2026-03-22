@@ -211,7 +211,7 @@ resource "aws_instance" "backend" {
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               apt install -y nodejs
               cd /opt
-              git clone https://github.com/davidawcloudsecurity/learn-lovable-llm-chat.git app
+              git clone https://github.com/davidawcloudsecurity/learn-lovable-llm.git app
               cd app
               npm install
               npm install -g pm2
@@ -245,7 +245,7 @@ resource "aws_instance" "frontend" {
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               apt install -y nodejs
               cd /opt
-              git clone https://github.com/davidawcloudsecurity/learn-lovable-llm-chat.git app
+              git clone https://github.com/davidawcloudsecurity/learn-lovable-llm.git app
               cd app
               npm install
               npm run build
