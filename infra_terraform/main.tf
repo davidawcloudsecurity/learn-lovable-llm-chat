@@ -232,8 +232,8 @@ resource "aws_instance" "backend" {
               # Create .env file with AWS configuration
               cat > .env <<'ENVFILE'
               PORT=8000
-              AWS_REGION=us-east-1
-              MODEL_ID=anthropic.claude-3-5-haiku-20241022-v1:0
+              AWS_DEFAULT_REGION=us-east-1
+              MODEL_ID=us.anthropic.claude-3-5-haiku-20241022-v1:0
               CHAT_SESSIONS_TABLE_NAME=${var.project_tag}-ChatSessions
               KNOWLEDGE_BASE_ID=
               GUARDRAIL_ID=
