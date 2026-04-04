@@ -136,7 +136,7 @@ resource "aws_security_group" "backend_sg" {
     from_port   = 8000
     to_port     = 8000
     protocol    = "tcp"
-    cidr_blocks = ["172.16.0.0/16"]
+    cidr_blocks = [var.main_cidr_block]
   }
 
   ingress {
@@ -206,15 +206,48 @@ resource "aws_instance" "backend" {
 
   user_data = <<-EOF
               #!/bin/bash
+              set -e
+              
+              # Update and install dependencies
               apt update
-              apt install -y git curl
+              apt install -y git curl python3-pip python3-venv
+              
+              # Install Node.js
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               apt install -y nodejs
+              
+              # Clone repository
               cd /opt
               git clone -b feat/main/strands-chat https://github.com/davidawcloudsecurity/learn-lovable-llm-chat.git app
-              cd app
-              npm install
+              cd app/api/chat
+              
+              # Create Python virtual environment
+              python3 -m venv venv
+              source venv/bin/activate
+              
+              # Install Python dependencies
+              pip install --upgrade pip
+              pip install -r requirements.txt
+              
+              # Create .env file with AWS configuration
+              cat > .env <<'ENVFILE'
+              PORT=8000
+              AWS_REGION=us-east-1
+              MODEL_ID=anthropic.claude-3-5-haiku-20241022-v1:0
+              CHAT_SESSIONS_TABLE_NAME=${var.project_tag}-ChatSessions
+              KNOWLEDGE_BASE_ID=
+              GUARDRAIL_ID=
+              GUARDRAIL_VERSION=
+              ENVFILE
+              
+              # Install PM2 globally
               npm install -g pm2
+              
+              # Start the Python FastAPI server with PM2
+              pm2 start index.py --name bedrock-api --interpreter /opt/app/api/chat/venv/bin/python3
+              pm2 save
+              pm2 startup systemd -u root --hp /root
+
               EOF
 
   tags = {
