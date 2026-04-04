@@ -234,6 +234,7 @@ resource "aws_instance" "backend" {
               PORT=8000
               AWS_DEFAULT_REGION=us-east-1
               MODEL_ID=us.anthropic.claude-3-5-haiku-20241022-v1:0
+              AWS_ROLE_ARN=arn:aws:iam::123456789012:role/placeholder
               CHAT_SESSIONS_TABLE_NAME=${var.project_tag}-ChatSessions
               KNOWLEDGE_BASE_ID=
               GUARDRAIL_ID=
@@ -243,8 +244,26 @@ resource "aws_instance" "backend" {
               # Install PM2 globally
               npm install -g pm2
               
-              # Start the Python FastAPI server with PM2
-              pm2 start index.py --name bedrock-api --interpreter /opt/app/api/chat/venv/bin/python3
+              # Start the Python FastAPI server with PM2 using ecosystem config
+              cat > ecosystem.config.js <<'ECOSYSTEM'
+              module.exports = {
+                apps: [{
+                  name: 'bedrock-api',
+                  script: 'index.py',
+                  interpreter: '/opt/app/api/chat/venv/bin/python3',
+                  cwd: '/opt/app/api/chat',
+                  env: {
+                    PORT: '8000',
+                    AWS_DEFAULT_REGION: 'us-east-1',
+                    MODEL_ID: 'us.anthropic.claude-3-5-haiku-20241022-v1:0',
+                    AWS_ROLE_ARN: 'arn:aws:iam::123456789012:role/placeholder',
+                    CHAT_SESSIONS_TABLE_NAME: '${var.project_tag}-ChatSessions'
+                  }
+                }]
+              };
+              ECOSYSTEM
+              
+              pm2 start ecosystem.config.js
               pm2 save
               pm2 startup systemd -u root --hp /root
 
