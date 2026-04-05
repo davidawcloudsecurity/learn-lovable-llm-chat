@@ -219,7 +219,7 @@ resource "aws_instance" "backend" {
               # Clone repository
               cd /opt
               git clone -b feat/main/strands-chat https://github.com/davidawcloudsecurity/learn-lovable-llm-chat.git app
-              cd app/api/chat
+              cd app/api/strands
               
               # Create Python virtual environment
               python3 -m venv venv
