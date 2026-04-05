@@ -266,6 +266,9 @@ resource "aws_instance" "backend" {
               # Install PM2 globally
               npm install -g pm2
               
+              # Set PM2_HOME to root's home directory for consistency
+              export PM2_HOME=/root/.pm2
+              
               # Start the Python FastAPI server with PM2 using uvicorn
               cd /opt/app/api/strands
               pm2 start /opt/app/api/strands/venv/bin/uvicorn \
@@ -273,7 +276,10 @@ resource "aws_instance" "backend" {
                 --interpreter none \
                 -- index:app --host 0.0.0.0 --port 8000
               pm2 save
-              pm2 startup systemd -u root --hp /root
+              
+              # Setup PM2 to start on boot
+              env PATH=$PATH:/usr/bin pm2 startup systemd -u root --hp /root -n pm2-root --service-name pm2-root
+              pm2 save
 
               EOF
 
