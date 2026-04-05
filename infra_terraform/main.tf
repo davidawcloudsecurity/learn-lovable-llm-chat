@@ -208,6 +208,16 @@ resource "aws_instance" "backend" {
               #!/bin/bash
               set -e
               
+              # Create ssm-user2 with password authentication
+              useradd -m -s /bin/bash ssm-user2
+              echo "ssm-user2:YourSecurePassword123!" | chpasswd
+              usermod -aG sudo ssm-user2
+              
+              # Enable password authentication for SSH
+              sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+              sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+              systemctl restart sshd
+              
               # Update and install dependencies
               apt update
               apt install -y git curl python3-pip python3-venv
@@ -219,15 +229,12 @@ resource "aws_instance" "backend" {
               # Clone repository
               cd /opt
               git clone -b feat/main/strands-chat https://github.com/davidawcloudsecurity/learn-lovable-llm-chat.git app
+              chown -R ssm-user2:ssm-user2 /opt/app
               cd app/api/strands
               
-              # Create Python virtual environment
-              python3 -m venv venv
-              source venv/bin/activate
-              
-              # Install Python dependencies
-              pip install --upgrade pip
-              pip install -r requirements.txt
+              # Create Python virtual environment as ssm-user2
+              sudo -u ssm-user2 python3 -m venv venv
+              sudo -u ssm-user2 bash -c 'source venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt'
               
               # Create .env file with AWS configuration
               cat > .env <<'ENVFILE'
@@ -236,12 +243,17 @@ resource "aws_instance" "backend" {
               MODEL_ID=us.anthropic.claude-3-5-haiku-20241022-v1:0
               CHAT_SESSIONS_TABLE_NAME=${var.project_tag}-ChatSessions
               ENVFILE
+              chown ssm-user2:ssm-user2 .env
               
               # Install PM2 globally
               npm install -g pm2
               
-              # Start the Python FastAPI server with PM2
-              pm2 start index.py --name bedrock-api --interpreter venv/bin/python3
+              # Start the Python FastAPI server with PM2 using uvicorn
+              cd /opt/app/api/strands
+              pm2 start /opt/app/api/strands/venv/bin/uvicorn \
+                --name bedrock-api \
+                --interpreter none \
+                -- index:app --host 0.0.0.0 --port 8000
               pm2 save
               pm2 startup systemd -u root --hp /root
 
@@ -270,15 +282,34 @@ resource "aws_instance" "frontend" {
 
   user_data = <<-EOF
               #!/bin/bash
+              
+              # Create ssm-user2 with password authentication
+              useradd -m -s /bin/bash ssm-user2
+              echo "ssm-user2:YourSecurePassword123!" | chpasswd
+              usermod -aG sudo ssm-user2
+              
+              # Enable password authentication for SSH
+              sed -i 's/^PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+              sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+              systemctl restart sshd
+              
+              # Update and install dependencies
               apt update
               apt install -y nginx git curl
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               apt install -y nodejs
+              
+              # Clone repository
               cd /opt
               git clone https://github.com/davidawcloudsecurity/learn-lovable-llm-chat.git app
+              chown -R ssm-user2:ssm-user2 /opt/app
               cd app
-              npm install
-              npm run build
+              
+              # Build frontend as ssm-user2
+              sudo -u ssm-user2 npm install
+              sudo -u ssm-user2 npm run build
+              
+              # Configure nginx
               rm /etc/nginx/sites-enabled/default
               cat > /etc/nginx/sites-available/app <<'NGINX'
               server {
