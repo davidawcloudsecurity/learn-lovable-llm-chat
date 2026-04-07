@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/strands/:path*",
-      "destination": "/api/chat/strands"
+      "destination": "/api/strands"
     },
     {
       "source": "/((?!api|_next|.*\\.).*)",
