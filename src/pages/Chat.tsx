@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BringBackTheAssistantLogo } from "@/components/BringBackTheAssistantLogo";
 import { streamChatResponse, ResponseMeta } from "@/lib/chat-api";
+import { useStopwatch } from "@/hooks/useStopwatch";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import ChatEmptyState from "@/components/chat/ChatEmptyState";
 import ChatMessage from "@/components/chat/ChatMessage";
@@ -17,6 +18,7 @@ const Chat = () => {
   const [error, setError] = useState<string | null>(null);
   const [meta, setMeta] = useState<ResponseMeta | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { elapsed: waitTime } = useStopwatch(isLoading);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -103,10 +105,15 @@ const Chat = () => {
                     <span className="text-primary-foreground text-xs font-bold font-display">LL</span>
                   </div>
                   <div className="bg-muted/80 border border-border/50 rounded-2xl rounded-bl-md px-4 py-3">
-                    <div className="flex gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse" />
-                      <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse [animation-delay:150ms]" />
-                      <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse [animation-delay:300ms]" />
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse [animation-delay:150ms]" />
+                        <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-pulse [animation-delay:300ms]" />
+                      </div>
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {waitTime.toFixed(1)}s
+                      </span>
                     </div>
                   </div>
                 </div>
