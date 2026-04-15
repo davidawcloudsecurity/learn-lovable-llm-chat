@@ -207,7 +207,6 @@ async def chat(request: Request):
             tools=[file_read, file_write, http_request],
             system_prompt=SYSTEM_PROMPT,
             callback_handler=callback,
-            max_tokens=4096,  # Limit response size
         )
 
         last_message = run_history(agent, messages)
