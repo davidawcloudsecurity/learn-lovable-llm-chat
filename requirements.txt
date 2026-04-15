@@ -1,4 +1,4 @@
 fastapi
 boto3
-strands-agents
-strands-agents-tools
+strands-agents>=0.2.0
+strands-agents-tools>=0.2.0
