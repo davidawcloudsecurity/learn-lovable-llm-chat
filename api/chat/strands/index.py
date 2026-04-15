@@ -38,13 +38,7 @@ AWS_ROLE_ARN = os.environ.get("AWS_ROLE_ARN")
 DEBUG        = os.environ.get("DEBUG", "true").lower() == "true"
 SYSTEM_PROMPT = os.environ.get(
     "SYSTEM_PROMPT",
-    (
-        "You are a helpful, friendly, and concise assistant running on a Linux server. "
-        "You have the following tools available:\n"
-        "- file_read: read files, list directories, search file contents, and compare files\n"
-        "Always use your tools to answer questions about files. "
-        "Never guess or fabricate file contents — always call the tool."
-    ),
+    "You are a helpful assistant with file_read, file_write, and http_request tools. IMPORTANT: Never use recursive file listing on large directories. Always use non-recursive mode first.",
 )
 INPUT_RATE_PER_MTOK  = float(os.environ.get("INPUT_RATE_PER_MTOK", "1.0"))
 OUTPUT_RATE_PER_MTOK = float(os.environ.get("OUTPUT_RATE_PER_MTOK", "5.0"))
@@ -154,10 +148,7 @@ def make_callback_handler(trace: list) -> callable:
 # ─── History Replay ─────────────────────────────────────────────────────────
 def run_history(agent: Agent, messages: list) -> str:
     """Replay prior conversation turns into the agent's memory."""
-    recent = messages[:-1][-6:]  # last 3 turns only, avoid context overflow
-    for msg in recent:
-        if msg["role"] == "user":
-            agent(msg["content"])
+    # Skip history entirely to avoid context overflow
     return messages[-1]["content"]
 
 
@@ -216,6 +207,7 @@ async def chat(request: Request):
             tools=[file_read, file_write, http_request],
             system_prompt=SYSTEM_PROMPT,
             callback_handler=callback,
+            max_tokens=4096,  # Limit response size
         )
 
         last_message = run_history(agent, messages)
