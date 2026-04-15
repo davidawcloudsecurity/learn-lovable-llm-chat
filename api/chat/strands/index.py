@@ -135,12 +135,13 @@ def make_callback_handler(trace: list) -> callable:
                     )
 
         # ── Active tool use (fires while tool is mid-call) ─────────────────
-        elif "current_tool_use" in kwargs and kwargs["current_tool_use"]:
-            tool_info = kwargs["current_tool_use"]
-            logger.info(
-                f"[TOOL RUNNING] {tool_info.get('name')} "
-                f"input={json.dumps(tool_info.get('input'), default=str)[:200]}"
-            )
+        # Disabled to reduce log noise - tool calls are logged when complete above
+        # elif "current_tool_use" in kwargs and kwargs["current_tool_use"]:
+        #     tool_info = kwargs["current_tool_use"]
+        #     logger.info(
+        #         f"[TOOL RUNNING] {tool_info.get('name')} "
+        #         f"input={json.dumps(tool_info.get('input'), default=str)[:200]}"
+        #     )
 
     return callback_handler
 
