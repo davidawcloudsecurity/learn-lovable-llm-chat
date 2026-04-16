@@ -152,13 +152,14 @@ def make_callback_handler(trace: list) -> callable:
     return callback_handler
 
 
-# ─── History Replay ─────────────────────────────────────────────────────────
-def run_history(agent: Agent, messages: list) -> str:
-    """Replay prior conversation turns into the agent's memory."""
-    recent = messages[:-1][-6:]  # last 3 turns only, avoid context overflow
-    for msg in recent:
-        if msg["role"] == "user":
-            agent(msg["content"])
+# ─── History Loading ────────────────────────────────────────────────────────
+def load_history(agent: Agent, messages: list) -> str:
+    """Load prior conversation turns directly into agent memory without re-invoking LLM."""
+    for msg in messages[:-1][-6:]:
+        agent.messages.append({
+            "role": msg["role"],
+            "content": [{"type": "text", "text": msg["content"]}]
+        })
     return messages[-1]["content"]
 
 
@@ -219,7 +220,7 @@ async def chat(request: Request):
             callback_handler=callback,
         )
 
-        last_message = run_history(agent, messages)
+        last_message = load_history(agent, messages)
         response = agent(last_message)
 
         elapsed = round(time.time() - start, 2)
